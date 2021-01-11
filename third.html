@@ -1,0 +1,252 @@
+<html>
+	<head>
+		<title> Game </title>
+	</head>
+
+	<body>
+
+		<canvas id="myCanvas" width="600" height="600" style="border:1px solid #000000;"></canvas>
+		
+
+		<script>
+			var canvas=document.getElementById("myCanvas");
+			var ctx = canvas.getContext("2d");
+
+			var paused=false;
+			ctx.font = "40px Arial";
+
+			var cW=600;
+			var cH=600;
+
+			var sW=80;
+			var sH=80;
+
+			var startedTime=Date.now();
+
+			var friend={
+				x:300,
+				y:300,
+				r:25,
+				dx:5,
+				dy:5,
+			};
+
+			var circle1={
+				x:100,
+				y:120,
+				r:50,
+				dx:5,
+				dy:5,
+			};
+
+			var circle2={
+				x:400,
+				y:400,
+				r:50,
+				dx:5,
+				dy:10,
+			};
+
+			var enemyListSquare={};
+
+			getDistanceBetween = function (entity1,entity2){
+				entity2.x++;
+				entity2.y++;
+				var vx= entity1.x-entity2.x;
+				var vy= entity1.y-entity2.y;
+				return Math.sqrt(vx*vx+vy*vy);
+			}
+
+			testCollision = function (entity1,entity2){
+				var distance= getDistanceBetween(entity1,entity2);
+				return distance<30;
+			}
+
+			eSquare = function (id,x,y,dx,dy){
+				var square1={
+					x:x,
+					y:y,
+					dx:dx,
+					dy:dy,
+					id:id,
+				};
+				enemyListSquare[id]=square1;
+			}
+			
+			document.onmousemove = function(mouse){
+				var mouseX=mouse.clientX;
+				var mouseY=mouse.clientY;
+
+				friend.x=mouseX;
+				friend.y=mouseY;
+			}
+
+			updateFriend = function (){
+				//friend
+				updateFriendPosition(friend);
+				drawFriend(friend);
+			}
+
+			updateFriendPosition = function(){
+//				friend.x +=friend.dx;
+//				friend.y +=friend.dy;
+				
+				if(friend.x-15<0 || friend.x+15>cW){
+					friend.dx=-friend.dx;
+				}
+
+				if(friend.y-15<0 || friend.y+15>cH){
+					friend.dy=-friend.dy;
+				}
+			}
+
+			drawFriend = function(){
+				ctx.fillStyle="blue";
+				ctx.beginPath();
+				ctx.arc(friend.x,friend.y,friend.r,0,2*Math.PI);
+				ctx.fill();
+				ctx.strokeStyle="black";
+				ctx.stroke();
+			}
+
+			updateEnemyCircle = function (circle){
+				//circle
+				updateEnemyCirclePosition(circle);
+				drawECircle(circle);
+			}
+
+			updateEnemyCirclePosition = function(circle){
+//				circle.x +=circle.dx;
+//				circle.y -=circle.dy;
+
+				if(circle.x<0 || circle.x>cW){
+					circle.dx=-circle.dx;
+				}
+
+				if(circle.y<0 || circle.y>cH){
+					circle.dy=-circle.dy;
+				}
+			}
+
+			drawECircle = function(circle){
+				circle.r++;
+				ctx.beginPath();
+				ctx.arc(circle.x,circle.y,circle.r,0,2*Math.PI);
+				ctx.fillStyle="red";
+				ctx.fill();
+				ctx.strokeStyle="black";
+				ctx.stroke();
+
+			}
+
+			updateEnemySquare = function (square){
+
+				updateEnemySquarePosition(square);
+				drawESquare(square);
+
+				//square	
+			}
+
+			updateEnemySquarePosition = function(square){
+				square.x +=square.dx;
+				square.y -=square.dy;
+
+				if(square.x<0 || square.x>cW-150){
+					square.dx=-square.dx;
+				}
+
+				if(square.y<0 || square.y>cH-150){
+					square.dy=-square.dy;
+				}
+			}
+
+			drawESquare = function(square){
+				sW++;
+				sH++;
+				ctx.fillRect(square.x,square.y,sW,sH);
+				ctx.fill();
+				ctx.strokeStyle="black";
+				ctx.stroke();
+			}
+
+			document.onkeydown=function(event){
+				if(event.keyCode==80){
+					paused=!paused;
+				}
+			}
+
+			update = function (){
+
+				if(paused){
+					return;
+				}
+
+				pf=function(){
+					paused=false;
+				}
+
+				p = function(){
+					pf();
+					paused=!paused;
+					ctx.fillStyle="green";
+					ctx.fillText("Game Over",300,100);
+					ctx.fillStyle="red";
+					ctx.fill();
+				}
+				
+				ctx.fillStyle="black";
+				ctx.fillRect(0,0,cW,cH);
+
+				updateFriend();
+
+				if(friend.x==0||friend.x==cW||friend.y==0||friend.y==cH){
+					var timeTaken=Date.now()-startedTime;
+					score=timeTaken*1000;
+					startedTime=Date.now();
+					p();
+					ctx.fillStyle="blue";
+					ctx.fill();
+				}
+
+				updateEnemyCircle(circle1);
+
+				var isColliding=testCollision(friend,circle1);
+				if(isColliding){
+					var timeTaken=Date.now()-startedTime;
+					score=timeTaken*1000;
+					startedTime=Date.now();
+					p();
+				}
+
+				updateEnemyCircle(circle2);
+
+				var isColliding=testCollision(friend,circle2);
+				if(isColliding){
+					var timeTaken=Date.now()-startedTime;
+					score=timeTaken*1000;
+					startedTime=Date.now();
+					p();
+				}
+
+				for( var skey in enemyListSquare){
+
+					updateEnemySquare(enemyListSquare[skey]);
+
+					var isColliding=testCollision(friend,enemyListSquare[skey]);
+
+					if(isColliding){
+						var timeTaken=Date.now()-startedTime;
+						score=timeTaken*1000;
+						startedTime=Date.now();
+						p();
+					}
+				}
+			}		
+
+			eSquare("s1",100,450,5,5);
+			eSquare("s2",450,300,5,5);
+
+			setInterval(update,40);
+		</script>
+	</body>
+</html>
